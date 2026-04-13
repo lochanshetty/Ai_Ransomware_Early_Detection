@@ -41,8 +41,8 @@ INSTALLED_APPS = [
     'rest_framework',
     # CRDS modular domain apps.
     'apps.monitoring',
-    'apps.detection',
-    'apps.deception',
+    'apps.detection.apps.DetectionConfig',
+    'apps.deception.apps.DeceptionConfig',
     'apps.api',
     'apps.dashboard',
 ]
