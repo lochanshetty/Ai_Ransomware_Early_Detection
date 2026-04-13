@@ -1,0 +1,32 @@
+{% extends "dashboard/base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Detected Threats</h2>
+    <a href="/dashboard/" class="btn btn-outline-secondary">Back to overview</a>
+</div>
+
+<div class="row g-3">
+    {% for threat in threats %}
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100 border-start border-4 {% if threat.threat_level == 'HIGH' %}border-danger{% elif threat.threat_level == 'MEDIUM' %}border-warning{% else %}border-info{% endif %}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="card-title mb-0">{{ threat.threat_level }} Threat</h5>
+                        <span class="badge {% if threat.threat_level == 'HIGH' %}text-bg-danger{% elif threat.threat_level == 'MEDIUM' %}text-bg-warning{% else %}text-bg-info{% endif %}">
+                            Score {{ threat.confidence_score|floatformat:2 }}
+                        </span>
+                    </div>
+                    <p class="card-text mb-1"><strong>Detected:</strong> {{ threat.detected_at|date:"Y-m-d H:i:s" }}</p>
+                    <p class="card-text mb-1"><strong>Log ID:</strong> {{ threat.security_log_id }}</p>
+                    <p class="card-text mb-0"><strong>Reason:</strong> {{ threat.reason|default:"Suspicious behavior detected by pipeline" }}</p>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-success mb-0">No active threats detected.</div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

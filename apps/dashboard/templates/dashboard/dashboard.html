@@ -1,0 +1,97 @@
+{% extends "dashboard/base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">System Overview</h2>
+        <p class="text-muted mb-0">Cognitive Ransomware Defense System</p>
+    </div>
+    <div>
+        {% if monitor_status.is_running %}
+            <span class="badge text-bg-success fs-6">Monitoring Running</span>
+        {% else %}
+            <span class="badge text-bg-secondary fs-6">Monitoring Stopped</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted">Total Logs</h6>
+                <h3 class="mb-0">{{ total_logs }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted">Total Threats</h6>
+                <h3 class="mb-0">{{ total_threats }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between">
+                <strong>Recent Logs</strong>
+                <a href="/dashboard/logs/" class="btn btn-sm btn-outline-primary">View all</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped mb-0">
+                    <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Source</th>
+                        <th>Type</th>
+                        <th>Message</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for log in recent_logs %}
+                        <tr>
+                            <td>{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+                            <td>{{ log.source }}</td>
+                            <td>{{ log.event_type }}</td>
+                            <td>{{ log.message|truncatechars:70 }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">No logs available</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between">
+                <strong>Threat Alerts</strong>
+                <a href="/dashboard/alerts/" class="btn btn-sm btn-outline-danger">View all</a>
+            </div>
+            <div class="card-body">
+                {% for threat in recent_threats %}
+                    <div class="border rounded p-2 mb-2">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ threat.threat_level }}</strong>
+                            <small class="text-muted">{{ threat.detected_at|date:"Y-m-d H:i" }}</small>
+                        </div>
+                        <div class="small text-muted">Log #{{ threat.security_log_id }}</div>
+                        <div class="small">Score: {{ threat.confidence_score|floatformat:2 }}</div>
+                        <div class="small">{{ threat.reason|default:"Suspicious behavior detected" }}</div>
+                    </div>
+                {% empty %}
+                    <p class="text-muted mb-0">No threats detected.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

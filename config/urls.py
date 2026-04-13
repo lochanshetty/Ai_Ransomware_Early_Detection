@@ -16,9 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic import RedirectView
 
 urlpatterns = [
+    # Default landing route for browser users.
+    path('', RedirectView.as_view(url='/dashboard/', permanent=False)),
     path('admin/', admin.site.urls),
+    path('dashboard/', include('apps.dashboard.urls')),
     # Route CRDS REST APIs through the dedicated API module.
     path('', include('apps.api.urls')),
 ]
