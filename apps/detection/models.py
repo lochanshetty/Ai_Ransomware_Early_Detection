@@ -23,17 +23,32 @@ class SecurityLog(TimeStampedModel):
         return f"{self.source}:{self.event_type}"
 
 
-class DetectedThreat(TimeStampedModel):
-    """Represents a threat candidate produced by the AI detection layer."""
+class ThreatLevel(models.TextChoices):
+    LOW = "LOW", "Low"
+    MEDIUM = "MEDIUM", "Medium"
+    HIGH = "HIGH", "High"
 
-    threat_name = models.CharField(max_length=255)
+
+class Threat(TimeStampedModel):
+    """Represents a suspicious event produced by the detection module."""
+
+    security_log = models.ForeignKey(
+        SecurityLog,
+        on_delete=models.CASCADE,
+        related_name="threats",
+    )
+    threat_level = models.CharField(
+        max_length=16,
+        choices=ThreatLevel.choices,
+        default=ThreatLevel.MEDIUM,
+    )
     confidence_score = models.FloatField()
-    severity = models.CharField(max_length=32, default="medium")
+    detected_at = models.DateTimeField(auto_now_add=True)
+    reason = models.CharField(max_length=255, blank=True)
     analysis_payload = models.JSONField(default=dict, blank=True)
-    is_confirmed = models.BooleanField(default=False)
 
     def __str__(self) -> str:
-        return f"{self.threat_name} ({self.severity})"
+        return f"{self.security_log_id}::{self.threat_level}"
 
 
 class Alert(TimeStampedModel):
@@ -44,7 +59,7 @@ class Alert(TimeStampedModel):
     status = models.CharField(max_length=32, default="open")
     severity = models.CharField(max_length=32, default="medium")
     threat = models.ForeignKey(
-        DetectedThreat,
+        Threat,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,

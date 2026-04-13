@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.detection.models import Alert, DetectedThreat, SecurityLog
+from apps.detection.models import Alert, SecurityLog, Threat
 
 
 @admin.register(SecurityLog)
@@ -9,11 +9,11 @@ class SecurityLogAdmin(admin.ModelAdmin):
     search_fields = ("source", "event_type", "message")
 
 
-@admin.register(DetectedThreat)
-class DetectedThreatAdmin(admin.ModelAdmin):
-    list_display = ("threat_name", "confidence_score", "severity", "is_confirmed")
-    list_filter = ("severity", "is_confirmed")
-    search_fields = ("threat_name",)
+@admin.register(Threat)
+class ThreatAdmin(admin.ModelAdmin):
+    list_display = ("security_log", "threat_level", "confidence_score", "detected_at")
+    list_filter = ("threat_level",)
+    search_fields = ("reason", "security_log__source", "security_log__message")
 
 
 @admin.register(Alert)

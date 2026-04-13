@@ -1,33 +1,41 @@
-from rest_framework import status
+from django.shortcuts import get_object_or_404
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.detection.models import DetectedThreat
+from apps.detection.models import SecurityLog, Threat
+from apps.detection.serializers import ThreatSerializer
+from apps.detection.services.pipeline import analyze_log
 
 
 class DetectAnalyzeAPIView(APIView):
-    """Phase-1 AI detection stub for anomaly scoring and threat logging."""
+    """Runs manual detection on a selected log or recent logs."""
 
     def post(self, request):
-        payload = request.data or {}
-        anomaly_score = float(payload.get("anomaly_score", 0.35))
-        is_threat = anomaly_score >= 0.7
+        log_id = request.data.get("security_log_id")
 
-        threat_record = None
-        if is_threat:
-            threat_record = DetectedThreat.objects.create(
-                threat_name=payload.get("threat_name", "Potential ransomware activity"),
-                confidence_score=anomaly_score,
-                severity=payload.get("severity", "high"),
-                analysis_payload=payload,
-                is_confirmed=False,
-            )
+        if log_id:
+            log = get_object_or_404(SecurityLog, id=log_id)
+            result = analyze_log(log)
+            return Response({"results": [result]}, status=status.HTTP_200_OK)
+
+        # Fallback: analyze most recent logs manually when no ID is provided.
+        logs = SecurityLog.objects.order_by("-created_at")[:20]
+        results = [analyze_log(log) for log in logs]
+        suspicious_count = len([item for item in results if item["is_suspicious"]])
 
         return Response(
             {
-                "anomaly_score": anomaly_score,
-                "is_threat": is_threat,
-                "threat_id": threat_record.id if threat_record else None,
+                "analyzed_logs": len(results),
+                "suspicious_logs": suspicious_count,
+                "results": results,
             },
             status=status.HTTP_200_OK,
         )
+
+
+class ThreatListAPIView(generics.ListAPIView):
+    """Lists threats identified by automatic and manual detection flows."""
+
+    queryset = Threat.objects.select_related("security_log").order_by("-detected_at")
+    serializer_class = ThreatSerializer
