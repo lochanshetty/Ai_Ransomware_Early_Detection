@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 
 from apps.detection.models import SecurityLog, Threat
 from apps.detection.serializers import ThreatSerializer
-from apps.detection.services.pipeline import analyze_log
+from apps.detection.services.pipeline import detect_threat
 
 
 class DetectAnalyzeAPIView(APIView):
@@ -16,12 +16,12 @@ class DetectAnalyzeAPIView(APIView):
 
         if log_id:
             log = get_object_or_404(SecurityLog, id=log_id)
-            result = analyze_log(log)
+            result = detect_threat(log)
             return Response({"results": [result]}, status=status.HTTP_200_OK)
 
         # Fallback: analyze most recent logs manually when no ID is provided.
         logs = SecurityLog.objects.order_by("-created_at")[:20]
-        results = [analyze_log(log) for log in logs]
+        results = [detect_threat(log) for log in logs]
         suspicious_count = len([item for item in results if item["is_suspicious"]])
 
         return Response(

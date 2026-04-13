@@ -15,14 +15,16 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import include, path
-from django.views.generic import RedirectView
+from django.urls import include, path, re_path
+from django.views.generic import TemplateView
 
 urlpatterns = [
-    # Default landing route for browser users.
-    path('', RedirectView.as_view(url='/dashboard/', permanent=False)),
     path('admin/', admin.site.urls),
-    path('dashboard/', include('apps.dashboard.urls')),
     # Route CRDS REST APIs through the dedicated API module.
     path('', include('apps.api.urls')),
+    # React SPA entry routes served by Django.
+    path('', TemplateView.as_view(template_name='index.html'), name='spa-root'),
+    path('login', TemplateView.as_view(template_name='index.html'), name='spa-login'),
+    path('signup', TemplateView.as_view(template_name='index.html'), name='spa-signup'),
+    re_path(r'^app(?:/.*)?$', TemplateView.as_view(template_name='index.html'), name='spa-app'),
 ]

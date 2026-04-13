@@ -15,13 +15,14 @@ def heuristic_assessment(log: SecurityLog) -> tuple[bool, ThreatLevel, str]:
     files_accessed_count = int(metadata.get("files_accessed_count", 0))
     process_known = bool(metadata.get("process_known", True))
 
-    if file_mod_count >= 30 and window_seconds <= 60:
+    # Demo-tuned threshold: frequent changes in a short window imply ransomware-like behavior.
+    if file_mod_count >= 5 and window_seconds <= 15:
         return True, ThreatLevel.HIGH, "Burst file modifications detected"
 
-    if not process_known and files_accessed_count >= 20:
+    if not process_known and files_accessed_count >= 8:
         return True, ThreatLevel.HIGH, "Unknown process accessed many files"
 
-    if file_mod_count >= 15 and window_seconds <= 120:
+    if file_mod_count >= 3 and window_seconds <= 30:
         return True, ThreatLevel.MEDIUM, "Elevated file modification pattern"
 
     return False, ThreatLevel.LOW, "No suspicious rule hit"

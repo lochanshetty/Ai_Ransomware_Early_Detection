@@ -64,7 +64,8 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # Serve compiled React SPA entry template.
+        'DIRS': [BASE_DIR / 'frontend' / 'dist'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -125,6 +126,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [
+    # Expose built frontend assets through Django staticfiles in development.
+    BASE_DIR / 'frontend' / 'dist',
+]
 
 # Central DRF defaults for API consistency across modules.
 REST_FRAMEWORK = {

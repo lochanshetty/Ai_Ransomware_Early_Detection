@@ -10,4 +10,10 @@ def run_detection_pipeline(sender, instance: SecurityLog, created: bool, **kwarg
     """Auto-runs detect_threat whenever a new SecurityLog record is created."""
 
     if created:
-        detect_threat(instance)
+        result = detect_threat(instance)
+        if result.get("is_suspicious"):
+            print("[DETECTION] Suspicious activity detected")
+            print(
+                f"[DETECTION] Classified as {result.get('threat_type', 'Unknown')} | "
+                f"level={result.get('threat_level')} | log_id={instance.id}"
+            )

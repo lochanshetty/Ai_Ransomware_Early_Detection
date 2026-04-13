@@ -16,6 +16,8 @@ class SecurityLog(TimeStampedModel):
 
     source = models.CharField(max_length=128)
     event_type = models.CharField(max_length=128)
+    action = models.CharField(max_length=64, blank=True)
+    file_path = models.CharField(max_length=512, blank=True)
     message = models.TextField()
     metadata = models.JSONField(default=dict, blank=True)
 
@@ -42,8 +44,10 @@ class Threat(TimeStampedModel):
         choices=ThreatLevel.choices,
         default=ThreatLevel.MEDIUM,
     )
+    threat_type = models.CharField(max_length=64, default="Normal")
     confidence_score = models.FloatField()
     detected_at = models.DateTimeField(auto_now_add=True)
+    message = models.CharField(max_length=255, blank=True)
     reason = models.CharField(max_length=255, blank=True)
     analysis_payload = models.JSONField(default=dict, blank=True)
 
