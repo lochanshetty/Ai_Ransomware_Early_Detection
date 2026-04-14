@@ -3,25 +3,38 @@ import { Clock3, LayoutDashboard, ShieldCheck, ShieldX, Siren } from 'lucide-rea
 import PageShell from '../components/layout/PageShell'
 import GlassCard from '../components/ui/GlassCard'
 import LoadingScreen from '../components/ui/LoadingScreen'
-import { getAlerts, getMonitorLogs, getMonitorStatus, getThreats, runDemoAttack, startMonitoring } from '../services/crdsApi'
+import {
+  getAlerts,
+  getMonitorLogs,
+  getMonitorStatus,
+  getSystemStatus,
+  getThreats,
+  systemRunAttack,
+  systemStartMonitoring,
+  systemStopAttack,
+  systemStopMonitoring,
+} from '../services/crdsApi'
 
 function DashboardPage() {
   const [loading, setLoading] = useState(true)
-  const [busy, setBusy] = useState(false)
+  const [action, setAction] = useState('')
   const [status, setStatus] = useState(null)
+  const [systemState, setSystemState] = useState({ monitoring: 'stopped', attack: 'stopped' })
   const [alerts, setAlerts] = useState([])
   const [threats, setThreats] = useState([])
   const [logs, setLogs] = useState([])
   const [message, setMessage] = useState('')
 
   const refreshData = async () => {
-    const [statusData, alertsData, threatsData, logsData] = await Promise.all([
+    const [statusData, systemData, alertsData, threatsData, logsData] = await Promise.all([
       getMonitorStatus(),
+      getSystemStatus(),
       getAlerts(),
       getThreats(),
       getMonitorLogs(),
     ])
     setStatus(statusData)
+    setSystemState(systemData)
     setAlerts(alertsData)
     setThreats(threatsData)
     setLogs(logsData)
@@ -31,14 +44,16 @@ function DashboardPage() {
   useEffect(() => {
     let mounted = true
     const loadOnMount = async () => {
-      const [statusData, alertsData, threatsData, logsData] = await Promise.all([
+      const [statusData, systemData, alertsData, threatsData, logsData] = await Promise.all([
         getMonitorStatus(),
+        getSystemStatus(),
         getAlerts(),
         getThreats(),
         getMonitorLogs(),
       ])
       if (!mounted) return
       setStatus(statusData)
+      setSystemState(systemData)
       setAlerts(alertsData)
       setThreats(threatsData)
       setLogs(logsData)
@@ -52,13 +67,15 @@ function DashboardPage() {
 
   useEffect(() => {
     const timer = setInterval(async () => {
-      const [statusData, alertsData, threatsData, logsData] = await Promise.all([
+      const [statusData, systemData, alertsData, threatsData, logsData] = await Promise.all([
         getMonitorStatus(),
+        getSystemStatus(),
         getAlerts(),
         getThreats(),
         getMonitorLogs(),
       ])
       setStatus(statusData)
+      setSystemState(systemData)
       setAlerts(alertsData)
       setThreats(threatsData)
       setLogs(logsData)
@@ -68,22 +85,42 @@ function DashboardPage() {
 
   if (loading) return <LoadingScreen />
 
-  const systemLabel = !status?.is_running ? 'SAFE' : threats.some((item) => item.threat_level === 'HIGH') ? 'ALERT' : 'MONITORING'
+  const monitoringRunning = systemState.monitoring === 'running'
+  const attackRunning = systemState.attack === 'running'
+  const systemLabel = attackRunning ? 'ALERT' : monitoringRunning ? 'MONITORING' : 'SAFE'
   const systemColor = systemLabel === 'ALERT' ? 'text-rose-300' : systemLabel === 'MONITORING' ? 'text-amber-300' : 'text-emerald-300'
+  const panelGlow = attackRunning ? 'shadow-[0_0_34px_rgba(251,113,133,0.45)] border-rose-400/40' : 'border-cyan-300/20'
 
   const handleStartMonitor = async () => {
-    setBusy(true)
-    await startMonitoring()
+    setAction('start-monitoring')
+    const response = await systemStartMonitoring()
+    setMessage(response.message || 'Monitoring started')
     await refreshData()
-    setBusy(false)
+    setAction('')
+  }
+
+  const handleStopMonitor = async () => {
+    setAction('stop-monitoring')
+    const response = await systemStopMonitoring()
+    setMessage(response.message || 'Monitoring stopped')
+    await refreshData()
+    setAction('')
   }
 
   const handleRunDemo = async () => {
-    setBusy(true)
-    const response = await runDemoAttack()
-    setMessage(response.status || 'Demo completed')
+    setAction('run-attack')
+    const response = await systemRunAttack()
+    setMessage(response.message || 'Attack started')
     await refreshData()
-    setBusy(false)
+    setAction('')
+  }
+
+  const handleStopAttack = async () => {
+    setAction('stop-attack')
+    const response = await systemStopAttack()
+    setMessage(response.message || 'Attack Stopped')
+    await refreshData()
+    setAction('')
   }
 
   return (
@@ -91,11 +128,14 @@ function DashboardPage() {
       <div className="space-y-5">
         <h2 className="text-2xl font-semibold tracking-wide text-slate-100">DASHBOARD</h2>
         <div className="grid gap-3 md:grid-cols-4">
-          <GlassCard className="min-h-[122px] xl-kpi-card">
+          <GlassCard className={`min-h-[122px] xl-kpi-card ${panelGlow}`}>
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-cyan-300/80">System Status</p>
               <h2 className={`mt-2 text-3xl font-semibold ${systemColor}`}>{systemLabel}</h2>
               <p className="mt-2 text-sm text-slate-400">Session: {status?.run_id || 'none'}</p>
+              <p className="mt-1 text-xs text-slate-300">
+                Monitoring: {systemState.monitoring} | Attack: {systemState.attack}
+              </p>
             </div>
           </GlassCard>
           <GlassCard className="min-h-[122px] xl-kpi-card">
@@ -109,22 +149,38 @@ function DashboardPage() {
             <p className="mt-2 text-xs text-slate-400">All operational</p>
           </GlassCard>
           <GlassCard className="min-h-[122px] xl-kpi-card">
-            <p className="text-xs uppercase tracking-[0.22em] text-cyan-300/80">Monitor Control</p>
+            <p className="text-xs uppercase tracking-[0.22em] text-cyan-300/80">System Controls</p>
             <button
               type="button"
               onClick={handleStartMonitor}
-              disabled={busy}
+              disabled={action !== '' || monitoringRunning}
               className="mt-2 w-full rounded-lg border border-cyan-400/40 bg-cyan-500/20 px-3 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-500/30 disabled:opacity-60"
             >
-              {busy ? 'Starting...' : 'Start Monitoring'}
+              {action === 'start-monitoring' ? 'Running...' : 'Start Monitoring'}
+            </button>
+            <button
+              type="button"
+              onClick={handleStopMonitor}
+              disabled={action !== '' || !monitoringRunning}
+              className="mt-2 w-full rounded-lg border border-slate-300/30 bg-slate-800/60 px-3 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-700/70 disabled:opacity-60"
+            >
+              {action === 'stop-monitoring' ? 'Stopping...' : 'Stop Monitoring'}
             </button>
             <button
               type="button"
               onClick={handleRunDemo}
-              disabled={busy}
+              disabled={action !== '' || attackRunning}
               className="mt-2 w-full rounded-lg border border-violet-400/40 bg-violet-500/20 px-3 py-2 text-sm font-medium text-violet-100 transition hover:bg-violet-500/30 disabled:opacity-60"
             >
-              {busy ? 'Running...' : 'Run Demo Attack'}
+              {action === 'run-attack' ? 'Launching...' : 'Run Demo Attack'}
+            </button>
+            <button
+              type="button"
+              onClick={handleStopAttack}
+              disabled={action !== '' || !attackRunning}
+              className="mt-2 w-full rounded-lg border border-rose-400/40 bg-rose-500/20 px-3 py-2 text-sm font-medium text-rose-100 transition hover:bg-rose-500/30 disabled:opacity-60"
+            >
+              {action === 'stop-attack' ? 'Stopping...' : 'Stop Attack'}
             </button>
           </GlassCard>
         </div>
@@ -138,6 +194,9 @@ function DashboardPage() {
           <div className="flex items-center gap-3 rounded-xl border border-cyan-300/20 bg-slate-950/50 px-4 py-3 text-slate-300">
             <Clock3 className="h-4 w-4 text-cyan-300" />
             {status?.started_at ? new Date(status.started_at).toLocaleString() : 'Not started'}
+            {monitoringRunning && <span className="status-pill success">LIVE</span>}
+            {attackRunning && <span className="status-pill blocked">ATTACK ACTIVE</span>}
+            {!attackRunning && monitoringRunning && <span className="status-pill warning">RECOVERED</span>}
           </div>
         </GlassCard>
 

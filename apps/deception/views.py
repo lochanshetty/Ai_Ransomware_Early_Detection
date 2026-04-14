@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.api.system_control import stop_attack_and_reset_state
 from apps.deception.models import HoneypotFile
 from apps.deception.services.honeypot_generator import generate_honeypots
 from apps.deception.services.honeypot_monitor import process_security_log
@@ -81,4 +82,19 @@ class HoneypotAccessReportAPIView(APIView):
                 "threat_id": monitor_result["threat_id"],
             },
             status=status.HTTP_201_CREATED,
+        )
+
+
+class HoneypotRefreshAPIView(APIView):
+    """Resets honeypot triggers and attack state for recovery actions."""
+
+    def post(self, request):
+        result = stop_attack_and_reset_state()
+        return Response(
+            {
+                "status": "ok",
+                "message": "Honeypot refresh completed",
+                **result,
+            },
+            status=status.HTTP_200_OK,
         )

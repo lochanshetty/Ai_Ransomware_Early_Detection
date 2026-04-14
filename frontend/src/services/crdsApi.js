@@ -75,6 +75,30 @@ export async function runDemoAttack() {
   return postJson('/demo/run')
 }
 
+export async function getSystemStatus() {
+  try {
+    return await getJson('/system/status')
+  } catch {
+    return { monitoring: 'stopped', attack: 'stopped' }
+  }
+}
+
+export async function systemStartMonitoring() {
+  return postJson('/system/start-monitoring')
+}
+
+export async function systemStopMonitoring() {
+  return postJson('/system/stop-monitoring')
+}
+
+export async function systemRunAttack() {
+  return postJson('/system/run-attack')
+}
+
+export async function systemStopAttack() {
+  return postJson('/system/stop-attack')
+}
+
 export async function getHoneypotStatus() {
   try {
     return await getJson('/honeypot/status')
