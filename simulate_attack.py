@@ -17,6 +17,8 @@ from pathlib import Path
 from time import sleep
 import argparse
 
+from utils.encryption import encrypt_file
+
 DEMO_DIR = Path(__file__).resolve().parent / "demo_files"
 
 
@@ -26,15 +28,17 @@ def simulate(with_note: bool = False):
         print(f"[SIM] demo_files not found at {DEMO_DIR}")
         return
 
-    files = [path for path in DEMO_DIR.iterdir() if path.is_file() and not path.name.endswith(".locked")]
+    files = [
+        path for path in DEMO_DIR.iterdir()
+        if path.is_file() and not path.name.endswith(".locked") and not path.name.startswith(".demo_fernet")
+    ]
     if not files:
         print("[SIM] No eligible files found (already renamed or missing).")
         return
 
     for file_path in files:
-        locked_path = file_path.with_name(f"{file_path.name}.locked")
-        file_path.rename(locked_path)
-        print(f"[SIM] Renamed: {file_path.name} -> {locked_path.name}")
+        locked_path = Path(encrypt_file(str(file_path)))
+        print(f"[SIM] Encrypted+Renamed: {file_path.name} -> {locked_path.name}")
         sleep(0.5)
 
     if with_note:

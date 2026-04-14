@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.deception.models import HoneypotFile
-from apps.deception.services.honeypot_generator import create_honeypot_files
+from apps.deception.services.honeypot_generator import generate_honeypots
 from apps.deception.services.honeypot_monitor import process_security_log
 from apps.detection.models import SecurityLog
 
@@ -12,11 +12,10 @@ class HoneypotCreateAPIView(APIView):
     """Creates fake sensitive honeypot files in monitored directories."""
 
     def post(self, request):
-        monitored_directories = request.data.get("monitored_directories", [])
-        count = int(request.data.get("count", 5))
-        files = create_honeypot_files(monitored_directories=monitored_directories, count=count)
+        files = generate_honeypots()
         return Response(
             {
+                "status": "created",
                 "created_count": len(files),
                 "files": [item.file_path for item in files],
             },
@@ -44,7 +43,7 @@ class HoneypotTriggeredAPIView(APIView):
     """Lists honeypot files that were triggered by suspicious access."""
 
     def get(self, request):
-        data = HoneypotFile.objects.filter(is_triggered=True).values("id", "file_path", "created_at")
+        data = HoneypotFile.objects.filter(is_triggered=True).order_by("-created_at").values("id", "file_path", "created_at")
         return Response({"triggered": list(data)}, status=status.HTTP_200_OK)
 
 

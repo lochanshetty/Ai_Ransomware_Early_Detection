@@ -1,9 +1,10 @@
 from pathlib import Path
 
 from apps.deception.models import HoneypotFile
-from apps.detection.models import SecurityLog
+from apps.detection.models import SecurityLog, Threat, ThreatLevel
 
-ACCESS_EVENTS = {"file_access", "file_open", "file_read", "file_modify", "file_write"}
+ACCESS_EVENTS = {"file_access", "file_open", "file_read", "file_modify", "file_write", "file_event"}
+ACCESS_ACTIONS = {"create", "modify", "rename", "delete"}
 
 
 def process_security_log(log: SecurityLog) -> dict:
@@ -20,10 +21,41 @@ def process_security_log(log: SecurityLog) -> dict:
 
     normalized_path = str(Path(file_path).resolve())
     honeypot = HoneypotFile.objects.filter(file_path=normalized_path).first()
-    if not honeypot or log.event_type not in ACCESS_EVENTS:
+    if not honeypot:
+        return {"triggered": False, "threat_id": None}
+
+    if log.event_type not in ACCESS_EVENTS:
+        return {"triggered": False, "threat_id": None}
+
+    if log.event_type == "file_event" and log.action not in ACCESS_ACTIONS:
         return {"triggered": False, "threat_id": None}
 
     if not honeypot.is_triggered:
         honeypot.is_triggered = True
         honeypot.save(update_fields=["is_triggered"])
-    return {"triggered": True, "threat_id": None}
+        print(f"[DECEPTION] Honeypot triggered! {honeypot.file_path}")
+
+    threat = Threat.objects.filter(
+        security_log=log,
+        threat_level=ThreatLevel.HIGH,
+        threat_type="Critical Threat",
+    ).first()
+    if not threat:
+        threat = Threat.objects.create(
+            security_log=log,
+            threat_level=ThreatLevel.HIGH,
+            threat_type="Critical Threat",
+            confidence_score=1.0,
+            message="Honeypot file triggered",
+            reason="Honeypot triggered!",
+            analysis_payload={
+                "honeypot_triggered": True,
+                "honeypot_path": honeypot.file_path,
+                "source": log.source,
+                "event_type": log.event_type,
+                "action": log.action,
+            },
+        )
+        print(f"[DETECTION] Threat detected (honeypot): log_id={log.id}")
+
+    return {"triggered": True, "threat_id": threat.id}

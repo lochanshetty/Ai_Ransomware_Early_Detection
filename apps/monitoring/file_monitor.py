@@ -55,6 +55,8 @@ class DemoFileEventHandler(FileSystemEventHandler):
             "files_accessed_count": burst_count,
             "process_known": False,
             "process_name": "demo_simulation",
+            "content_modified": action == "modify",
+            "event_action": action,
         }
         log = SecurityLog.objects.create(
             source="monitoring",

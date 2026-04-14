@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, status
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -34,8 +34,10 @@ class DetectAnalyzeAPIView(APIView):
         )
 
 
-class ThreatListAPIView(generics.ListAPIView):
+class ThreatListAPIView(APIView):
     """Lists threats identified by automatic and manual detection flows."""
 
-    queryset = Threat.objects.select_related("security_log").order_by("-detected_at")
-    serializer_class = ThreatSerializer
+    def get(self, request):
+        queryset = Threat.objects.select_related("security_log").order_by("-detected_at")[:50]
+        serializer = ThreatSerializer(queryset, many=True)
+        return Response({"status": "ok", "results": serializer.data}, status=status.HTTP_200_OK)

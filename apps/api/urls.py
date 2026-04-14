@@ -29,6 +29,7 @@ urlpatterns = [
     path("detect/analyze", DetectAnalyzeAPIView.as_view(), name="detect-analyze"),
     path("detect/threats", ThreatListAPIView.as_view(), name="detect-threats"),
     # Deception honeypot endpoints.
+    path("honeypot/generate", HoneypotCreateAPIView.as_view(), name="honeypot-generate"),
     path("honeypot/create", HoneypotCreateAPIView.as_view(), name="honeypot-create"),
     path("honeypot/status", HoneypotStatusAPIView.as_view(), name="honeypot-status"),
     path("honeypot/triggered", HoneypotTriggeredAPIView.as_view(), name="honeypot-triggered"),

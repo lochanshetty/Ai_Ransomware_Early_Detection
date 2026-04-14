@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from apps.detection.models import SecurityLog
 from apps.monitoring.models import ProtectedFile
 from apps.monitoring.services import monitor_runtime
+from utils.encryption import decrypt_file
 
 
 class MonitorStartAPIView(APIView):
@@ -16,7 +17,8 @@ class MonitorStartAPIView(APIView):
 
     def post(self, request):
         monitor_runtime.start()
-        return Response({"status": "Monitoring started"}, status=status.HTTP_200_OK)
+        print("[MONITOR] Monitoring started")
+        return Response({"status": "running"}, status=status.HTTP_200_OK)
 
 
 class MonitorStatusAPIView(APIView):
@@ -44,7 +46,7 @@ class MonitorLogsAPIView(APIView):
             }
             for row in latest_logs
         ]
-        return Response({"results": data}, status=status.HTTP_200_OK)
+        return Response({"status": "ok", "results": data}, status=status.HTTP_200_OK)
 
 
 class RegistryAddAPIView(APIView):
@@ -103,7 +105,7 @@ class DemoRunAPIView(APIView):
         for locked_file in demo_dir.glob("*.locked"):
             original = locked_file.with_name(locked_file.name.replace(".locked", ""))
             if not original.exists():
-                locked_file.rename(original)
+                decrypt_file(str(locked_file))
 
         monitor_runtime.start()
         subprocess.run([sys.executable, str(simulate_script)], check=True)

@@ -22,8 +22,11 @@ def _handle_honeypot_access(log: SecurityLog) -> dict | None:
 
     normalized_path = str(Path(file_path).resolve())
     honeypot = HoneypotFile.objects.filter(file_path=normalized_path).first()
-    access_events = {"file_access", "file_open", "file_read", "file_modify", "file_write"}
+    access_events = {"file_access", "file_open", "file_read", "file_modify", "file_write", "file_event"}
+    access_actions = {"create", "modify", "rename", "delete"}
     if not honeypot or log.event_type not in access_events:
+        return None
+    if log.event_type == "file_event" and log.action not in access_actions:
         return None
 
     if not honeypot.is_triggered:
@@ -33,15 +36,15 @@ def _handle_honeypot_access(log: SecurityLog) -> dict | None:
     existing = Threat.objects.filter(
         security_log=log,
         threat_level=ThreatLevel.HIGH,
-        reason="Honeypot file accessed",
+        analysis_payload__honeypot_triggered=True,
     ).first()
     threat = existing or Threat.objects.create(
         security_log=log,
         threat_level=ThreatLevel.HIGH,
-        threat_type="Honeypot Trigger",
+        threat_type="Critical Threat",
         confidence_score=1.0,
         message="Honeypot file access detected",
-        reason="Honeypot file accessed",
+        reason="Honeypot triggered!",
         analysis_payload={
             "bypassed_ai_detection": True,
             "honeypot_triggered": True,
@@ -56,7 +59,8 @@ def _handle_honeypot_access(log: SecurityLog) -> dict | None:
         "threat_id": threat.id,
         "anomaly_score": 1.0,
         "threat_level": ThreatLevel.HIGH,
-        "reason": "Honeypot file accessed",
+        "threat_type": "Critical Threat",
+        "reason": "Honeypot triggered!",
     }
 
 
@@ -73,10 +77,30 @@ def _classify_ransomware_activity(log: SecurityLog) -> tuple[bool, str, ThreatLe
 
     metadata = log.metadata or {}
     burst_modifications = int(metadata.get("file_mod_count", 0))
+    window_start = timezone.now() - timedelta(seconds=20)
+    recent_logs = SecurityLog.objects.filter(
+        source="monitoring",
+        created_at__gte=window_start,
+    )
+    rename_count = recent_logs.filter(action="rename").count()
+    modified_count = recent_logs.filter(action="modify").count()
+    has_ransom_note = recent_logs.filter(
+        action="create",
+        file_path__iendswith="README.txt",
+    ).exists()
+
+    if rename_count >= 5 and modified_count >= 3:
+        context = {
+            "rename_count_20s": rename_count,
+            "modified_count_20s": modified_count,
+            "has_ransom_note": has_ransom_note,
+        }
+        return True, "Encrypted Ransomware Behavior", ThreatLevel.HIGH, 0.99, "Mass rename and content modification detected", context
+
     if log.action == "rename" and burst_modifications >= 5:
         same_window_has_note = SecurityLog.objects.filter(
             source="monitoring",
-            created_at__gte=timezone.now() - timedelta(seconds=20),
+            created_at__gte=window_start,
             action="create",
             file_path__iendswith="README.txt",
         ).exists()
@@ -90,19 +114,9 @@ def _classify_ransomware_activity(log: SecurityLog) -> tuple[bool, str, ThreatLe
             "has_ransom_note": False,
         }
 
-    window_start = timezone.now() - timedelta(seconds=20)
-    recent_logs = SecurityLog.objects.filter(
-        source="monitoring",
-        created_at__gte=window_start,
-    )
-    rename_count = recent_logs.filter(action="rename").count()
-    has_ransom_note = recent_logs.filter(
-        action="create",
-        file_path__iendswith="README.txt",
-    ).exists()
-
     context = {
         "rename_count_20s": rename_count,
+        "modified_count_20s": modified_count,
         "has_ransom_note": has_ransom_note,
     }
     if rename_count >= 5 and not has_ransom_note:

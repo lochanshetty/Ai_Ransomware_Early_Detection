@@ -17,19 +17,22 @@ from pathlib import Path
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
+from utils.encryption import decrypt_file
+
 BASE_URL = "http://127.0.0.1:8000"
 ROOT = Path(__file__).resolve().parent
 
 
 def _reset_demo_files():
-    """Resets previously renamed *.locked files for repeatable demos."""
+    """Resets previously encrypted/renamed *.locked files for repeatable demos."""
 
     demo_dir = ROOT / "demo_files"
     for locked in demo_dir.glob("*.locked"):
         original = locked.with_name(locked.name.replace(".locked", ""))
-        if not original.exists():
-            locked.rename(original)
-            print(f"[DEMO] Reset file: {locked.name} -> {original.name}")
+        if original.exists():
+            continue
+        decrypt_file(str(locked))
+        print(f"[DEMO] Reset file: {locked.name} -> {original.name}")
 
 
 def _request_json(path: str, method: str = "GET", body: dict | None = None):
