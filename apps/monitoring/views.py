@@ -2,6 +2,7 @@ from pathlib import Path
 import subprocess
 import sys
 
+from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -32,13 +33,34 @@ class MonitorLogsAPIView(APIView):
     """Returns latest file monitoring logs for demo verification."""
 
     def get(self, request):
-        latest_logs = SecurityLog.objects.order_by("-created_at")[:50]
+        status_filter = str(request.query_params.get("status", "all")).lower()
+        latest_logs = SecurityLog.objects.order_by("-created_at")
+        if status_filter != "all":
+            action_filters = {
+                "success": ["create"],
+                "warning": ["modify"],
+                "alert": ["rename"],
+                "blocked": ["rename", "delete"],
+            }
+            actions = action_filters.get(status_filter)
+            if actions:
+                latest_logs = latest_logs.filter(action__in=actions)
+        latest_logs = latest_logs[:100]
+
+        def _status_for(row: SecurityLog) -> str:
+            if row.action in {"rename", "delete"}:
+                return "blocked" if row.action == "delete" else "alert"
+            if row.action == "modify":
+                return "warning"
+            return "success"
+
         data = [
             {
                 "id": row.id,
                 "source": row.source,
                 "event_type": row.event_type,
                 "action": row.action,
+                "status": _status_for(row),
                 "file_path": row.file_path,
                 "message": row.message,
                 "metadata": row.metadata,
@@ -47,6 +69,40 @@ class MonitorLogsAPIView(APIView):
             for row in latest_logs
         ]
         return Response({"status": "ok", "results": data}, status=status.HTTP_200_OK)
+
+
+class FileOpenAPIView(APIView):
+    """Returns safe URL for opening monitored files in a new tab."""
+
+    def get(self, request):
+        requested_path = request.query_params.get("path")
+        if not requested_path:
+            return Response({"detail": "path is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        resolved = str(Path(requested_path).resolve())
+        preview_url = f"/file/view?path={resolved}"
+        return Response({"status": "ok", "path": resolved, "preview_url": preview_url}, status=status.HTTP_200_OK)
+
+
+class FileViewAPIView(APIView):
+    """Renders monitored file content in plain text for quick inspection."""
+
+    def get(self, request):
+        requested_path = request.query_params.get("path")
+        if not requested_path:
+            return Response({"detail": "path is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        path = Path(requested_path).resolve()
+        if not path.exists() or not path.is_file():
+            return Response({"detail": "File not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Restrict preview to demo_files for safe demos.
+        demo_root = Path(__file__).resolve().parents[2] / "demo_files"
+        if not str(path).startswith(str(demo_root.resolve())):
+            return Response({"detail": "Access denied for this path"}, status=status.HTTP_403_FORBIDDEN)
+
+        content = path.read_text(encoding="utf-8", errors="replace")
+        return HttpResponse(content, content_type="text/plain; charset=utf-8")
 
 
 class RegistryAddAPIView(APIView):

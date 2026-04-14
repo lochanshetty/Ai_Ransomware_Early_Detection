@@ -5,6 +5,7 @@ from apps.api.views import (
     HealthCheckAPIView,
     SystemRunAttackAPIView,
     SystemStartMonitoringAPIView,
+    SystemMetricsAPIView,
     SystemStatusAPIView,
     SystemStopAttackAPIView,
     SystemStopMonitoringAPIView,
@@ -19,6 +20,8 @@ from apps.deception.views import (
 from apps.detection.views import DetectAnalyzeAPIView, ThreatListAPIView
 from apps.monitoring.views import (
     DemoRunAPIView,
+    FileOpenAPIView,
+    FileViewAPIView,
     MonitorLogsAPIView,
     MonitorStartAPIView,
     MonitorStatusAPIView,
@@ -31,6 +34,8 @@ urlpatterns = [
     path("monitor/start", MonitorStartAPIView.as_view(), name="monitor-start"),
     path("monitor/status", MonitorStatusAPIView.as_view(), name="monitor-status"),
     path("monitor/logs", MonitorLogsAPIView.as_view(), name="monitor-logs"),
+    path("file/open", FileOpenAPIView.as_view(), name="file-open"),
+    path("file/view", FileViewAPIView.as_view(), name="file-view"),
     path("demo/run", DemoRunAPIView.as_view(), name="demo-run"),
     path("registry/add", RegistryAddAPIView.as_view(), name="registry-add"),
     path("registry/list", RegistryListAPIView.as_view(), name="registry-list"),
@@ -46,6 +51,7 @@ urlpatterns = [
     path("deception/access", HoneypotAccessReportAPIView.as_view(), name="deception-access"),
     # Unified dashboard system controls.
     path("system/status", SystemStatusAPIView.as_view(), name="system-status"),
+    path("system/metrics", SystemMetricsAPIView.as_view(), name="system-metrics"),
     path("system/start-monitoring", SystemStartMonitoringAPIView.as_view(), name="system-start-monitoring"),
     path("system/stop-monitoring", SystemStopMonitoringAPIView.as_view(), name="system-stop-monitoring"),
     path("system/run-attack", SystemRunAttackAPIView.as_view(), name="system-run-attack"),

@@ -79,7 +79,7 @@ function DashboardPage() {
       setAlerts(alertsData)
       setThreats(threatsData)
       setLogs(logsData)
-    }, 8000)
+    }, 2000)
     return () => clearInterval(timer)
   }, [])
 
@@ -248,7 +248,7 @@ function DashboardPage() {
                 )}
                 <div>
                   <p className="text-sm text-slate-100">{alert.title}</p>
-                  <p className="text-xs uppercase tracking-wider text-slate-400">{alert.status}</p>
+                  <p className="text-xs uppercase tracking-wider text-slate-400">{alert.status === 'open' ? 'ACTIVE' : 'RESOLVED'}</p>
                 </div>
               </div>
             ))}

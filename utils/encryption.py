@@ -35,9 +35,15 @@ def encrypt_file(file_path: str) -> str:
 
     payload = src.read_bytes()
     encrypted = _get_cipher().encrypt(payload)
-    src.write_bytes(encrypted)
 
     locked = src.with_name(f"{src.name}.locked")
+    if locked.exists():
+        locked.write_bytes(encrypted)
+        src.unlink(missing_ok=True)
+        print(f"[SIM] File encrypted using AES: {locked.name}")
+        return str(locked)
+
+    src.write_bytes(encrypted)
     src.rename(locked)
     print(f"[SIM] File encrypted using AES: {locked.name}")
     return str(locked)

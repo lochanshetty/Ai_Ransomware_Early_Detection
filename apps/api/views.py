@@ -1,5 +1,5 @@
-from pathlib import Path
 from django.utils import timezone
+import psutil
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
@@ -79,9 +79,7 @@ class SystemRunAttackAPIView(APIView):
     """Runs simulation from dashboard controls."""
 
     def post(self, request):
-        base_dir = Path(__file__).resolve().parents[2]
-        simulate_script = base_dir / "simulate_attack.py"
-        monitor_runtime.run_attack(simulate_script=simulate_script)
+        monitor_runtime.run_attack()
         print("[SYSTEM] Attack started")
         return Response(
             {
@@ -104,6 +102,38 @@ class SystemStopAttackAPIView(APIView):
                 "status": "ok",
                 "message": "Attack stopped via dashboard",
                 **result,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class SystemMetricsAPIView(APIView):
+    """Returns system-level telemetry and component state for dashboard visuals."""
+
+    def get(self, request):
+        vm = psutil.virtual_memory()
+        disk = psutil.disk_usage("/")
+        net = psutil.net_io_counters()
+        components = [
+            {"id": "firewall", "name": "Firewall", "status": "ACTIVE", "role": "Traffic policy enforcement", "metrics": {"blocked_rules": 12}},
+            {"id": "ids", "name": "IDS/IPS", "status": "ACTIVE", "role": "Intrusion detection and prevention", "metrics": {"detections": Threat.objects.count()}},
+            {"id": "threat-db", "name": "Threat DB", "status": "ACTIVE", "role": "Threat intelligence and signatures", "metrics": {"entries": 256}},
+            {"id": "ml-engine", "name": "ML Engine", "status": "ACTIVE" if monitor_runtime.system_state()["monitoring"] == "running" else "STANDBY", "role": "Behavior anomaly scoring", "metrics": {"model_version": "iforest-v1"}},
+            {"id": "network-monitor", "name": "Network Monitor", "status": "ACTIVE", "role": "Network telemetry sampling", "metrics": {"bytes_sent": net.bytes_sent, "bytes_recv": net.bytes_recv}},
+            {"id": "storage", "name": "Storage", "status": "ACTIVE", "role": "Log and artifact retention", "metrics": {"usage_percent": disk.percent}},
+        ]
+        return Response(
+            {
+                "status": "ok",
+                "system": monitor_runtime.system_state(),
+                "metrics": {
+                    "cpu_percent": psutil.cpu_percent(interval=0.1),
+                    "memory_percent": vm.percent,
+                    "disk_percent": disk.percent,
+                    "network_bytes_sent": net.bytes_sent,
+                    "network_bytes_recv": net.bytes_recv,
+                },
+                "components": components,
             },
             status=status.HTTP_200_OK,
         )

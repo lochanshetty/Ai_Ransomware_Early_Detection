@@ -8,6 +8,19 @@ from apps.detection.services.anomaly_detector import score_logs
 from apps.detection.services.rule_engine import heuristic_assessment
 
 
+def _simulated_threat_intel(log: SecurityLog) -> dict:
+    seed = log.id or 1
+    octet = 10 + (seed % 200)
+    return {
+        "source_ip": f"198.51.100.{octet}",
+        "process_name": (log.metadata or {}).get("process_name") or "demo_simulation",
+        "file_origin": "demo_files",
+        "behavior_pattern": "Mass rename + write pattern",
+        "encryption_type": "Fernet (AES-based) - Simulated",
+        "intel_note": "Simulated Threat Intelligence",
+    }
+
+
 def _handle_honeypot_access(log: SecurityLog) -> dict | None:
     """
     Handles honeypot hits with immediate HIGH threat and bypasses AI flow.
@@ -50,6 +63,7 @@ def _handle_honeypot_access(log: SecurityLog) -> dict | None:
             "honeypot_triggered": True,
             "honeypot_path": honeypot.file_path,
             "process_name": metadata.get("process_name"),
+            **_simulated_threat_intel(log),
         },
     )
 
@@ -154,7 +168,7 @@ def analyze_log(log: SecurityLog) -> dict:
                 confidence_score=classified_confidence,
                 message=classified_msg,
                 reason=classified_msg,
-                analysis_payload=classified_ctx,
+                analysis_payload={**classified_ctx, **_simulated_threat_intel(log)},
             )
             _create_alert_for_threat(threat)
         return {
@@ -188,6 +202,7 @@ def analyze_log(log: SecurityLog) -> dict:
                 "rule_suspicious": rule_suspicious,
                 "model_suspicious": model_suspicious,
                 "anomaly_score": float(anomaly_score),
+                **_simulated_threat_intel(log),
             },
         )
         _create_alert_for_threat(threat)

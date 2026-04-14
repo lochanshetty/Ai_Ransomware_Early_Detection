@@ -58,9 +58,9 @@ export async function getAlerts() {
   }
 }
 
-export async function getMonitorLogs() {
+export async function getMonitorLogs(filter = 'all') {
   try {
-    const payload = await getJson('/monitor/logs')
+    const payload = await getJson(`/monitor/logs?status=${encodeURIComponent(filter)}`)
     return payload.results || []
   } catch {
     return []
@@ -99,6 +99,24 @@ export async function systemStopAttack() {
   return postJson('/system/stop-attack')
 }
 
+export async function openFilePath(path) {
+  const payload = await getJson(`/file/open?path=${encodeURIComponent(path)}`)
+  return payload.preview_url
+}
+
+export async function getSystemMetrics() {
+  try {
+    return await getJson('/system/metrics')
+  } catch {
+    return {
+      status: 'down',
+      system: { monitoring: 'stopped', attack: 'stopped' },
+      metrics: { cpu_percent: 0, memory_percent: 0, disk_percent: 0, network_bytes_sent: 0, network_bytes_recv: 0 },
+      components: [],
+    }
+  }
+}
+
 export async function getHoneypotStatus() {
   try {
     return await getJson('/honeypot/status')
@@ -118,4 +136,8 @@ export async function getHoneypotTriggered() {
 
 export async function generateHoneypots() {
   return postJson('/honeypot/generate')
+}
+
+export async function refreshHoneypots() {
+  return postJson('/honeypot/refresh')
 }

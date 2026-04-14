@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { Bug, Lock, MapPin, Signal } from 'lucide-react'
 import GlassCard from '../components/ui/GlassCard'
 import PageShell from '../components/layout/PageShell'
-import { generateHoneypots, getHoneypotStatus, getHoneypotTriggered } from '../services/crdsApi'
+import { generateHoneypots, getHoneypotStatus, getHoneypotTriggered, refreshHoneypots } from '../services/crdsApi'
 
 function HoneypotPage() {
   const [status, setStatus] = useState(null)
   const [triggered, setTriggered] = useState([])
+  const [selected, setSelected] = useState(null)
 
   const loadStatus = async () => {
     const [statusData, triggeredData] = await Promise.all([
@@ -29,13 +30,20 @@ function HoneypotPage() {
       setTriggered(triggeredData)
     }
     loadOnMount()
+    const timer = setInterval(loadStatus, 2000)
     return () => {
       mounted = false
+      clearInterval(timer)
     }
   }, [])
 
   const createHoneypots = async () => {
     await generateHoneypots()
+    await loadStatus()
+  }
+
+  const handleRefresh = async () => {
+    await refreshHoneypots()
     await loadStatus()
   }
 
@@ -54,9 +62,9 @@ function HoneypotPage() {
           <button
             type="button"
             className="rounded-xl border border-cyan-300/30 bg-slate-950/60 px-4 py-2 text-cyan-100 transition hover:border-cyan-200"
-            onClick={loadStatus}
+            onClick={handleRefresh}
           >
-            Refresh Status
+            Refresh / Recover
           </button>
         </div>
         {status && (
@@ -67,7 +75,11 @@ function HoneypotPage() {
       </GlassCard>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {(triggered.length ? triggered : [{ id: 'h-001', file_path: 'H-001 SSH Trap Alpha' }, { id: 'h-002', file_path: 'H-002 HTTP Decoy Beta' }, { id: 'h-003', file_path: 'H-003 SMB Lure Gamma' }]).map((item, idx) => (
-          <GlassCard key={item.id} className={`min-h-[160px] ${idx === 2 ? 'border-rose-400/40 shadow-[0_0_24px_rgba(244,63,94,0.25)]' : ''}`}>
+          <GlassCard
+            key={item.id}
+            className={`min-h-[160px] cursor-pointer ${idx === 2 ? 'border-rose-400/40 shadow-[0_0_24px_rgba(244,63,94,0.25)]' : ''}`}
+            onClick={() => setSelected(item)}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-cyan-300"><Bug className="h-4 w-4" /><p className="font-semibold">H-{String(idx + 1).padStart(3, '0')}</p></div>
               <span className={`h-2 w-2 rounded-full ${idx === 2 ? 'bg-rose-400' : 'bg-cyan-300'}`} />
@@ -81,6 +93,19 @@ function HoneypotPage() {
           </GlassCard>
         ))}
       </div>
+      {selected && (
+        <GlassCard className="mt-4 border border-cyan-300/30">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-semibold text-cyan-100">Honeypot Detail</p>
+            <button type="button" className="status-pill" onClick={() => setSelected(null)}>Close</button>
+          </div>
+          <p className="text-sm text-slate-200">File: {selected.file_path}</p>
+          <p className="text-sm text-slate-300">Trigger time: {selected.created_at ? new Date(selected.created_at).toLocaleString() : 'Simulated'}</p>
+          <p className="text-sm text-slate-300">Access pattern: Unauthorized decoy interaction</p>
+          <p className="text-sm text-slate-300">Source IP: 203.0.113.{(Number(selected.id) || 1) % 200 + 1} (simulated)</p>
+          <p className="text-sm text-rose-300">Threat level: HIGH</p>
+        </GlassCard>
+      )}
     </PageShell>
   )
 }

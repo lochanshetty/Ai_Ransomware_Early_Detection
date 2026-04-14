@@ -1,10 +1,9 @@
 import uuid
 from datetime import datetime, timezone
-from pathlib import Path
-import subprocess
-import sys
+import threading
 
 from apps.monitoring.file_monitor import DemoFileMonitor
+from simulate_attack import run_attack_loop
 
 
 class MonitorRuntimeState:
@@ -16,7 +15,8 @@ class MonitorRuntimeState:
         self.started_at = None
         self.file_monitor = DemoFileMonitor()
         self.attack_status = "stopped"
-        self.attack_process: subprocess.Popen | None = None
+        self.attack_running = False
+        self.attack_thread: threading.Thread | None = None
 
     def start(self) -> str:
         self.file_monitor.start()
@@ -36,36 +36,34 @@ class MonitorRuntimeState:
         self.file_monitor.start()
 
     def status(self) -> dict:
-        if self.attack_process and self.attack_process.poll() is not None:
-            self.attack_process = None
-            self.attack_status = "stopped"
         return {
             "is_running": self.file_monitor.is_running(),
             "run_id": self.run_id,
             "started_at": self.started_at.isoformat() if self.started_at else None,
         }
 
-    def run_attack(self, simulate_script: Path):
-        if self.attack_process and self.attack_process.poll() is None:
+    def run_attack(self):
+        if self.attack_running:
             return
         self.start()
-        self.attack_process = subprocess.Popen([sys.executable, str(simulate_script)])
+        self.attack_running = True
+        self.attack_thread = threading.Thread(
+            target=run_attack_loop,
+            args=(lambda: self.attack_running,),
+            kwargs={"with_note": True},
+            daemon=True,
+        )
+        self.attack_thread.start()
         self.attack_status = "running"
 
     def stop_attack(self):
-        if self.attack_process and self.attack_process.poll() is None:
-            self.attack_process.terminate()
-            try:
-                self.attack_process.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                self.attack_process.kill()
-        self.attack_process = None
+        self.attack_running = False
+        if self.attack_thread and self.attack_thread.is_alive():
+            self.attack_thread.join(timeout=4)
+        self.attack_thread = None
         self.attack_status = "stopped"
 
     def system_state(self) -> dict:
-        if self.attack_process and self.attack_process.poll() is not None:
-            self.attack_process = None
-            self.attack_status = "stopped"
         monitoring = "running" if self.file_monitor.is_running() else "stopped"
         return {
             "monitoring": monitoring,

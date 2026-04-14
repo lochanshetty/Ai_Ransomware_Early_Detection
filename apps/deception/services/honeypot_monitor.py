@@ -54,6 +54,12 @@ def process_security_log(log: SecurityLog) -> dict:
                 "source": log.source,
                 "event_type": log.event_type,
                 "action": log.action,
+                "source_ip": f"203.0.113.{(log.id or 1) % 200 + 1}",
+                "process_name": metadata.get("process_name", "demo_simulation"),
+                "file_origin": "demo_files",
+                "behavior_pattern": "Honeypot access and tamper attempt",
+                "encryption_type": "Fernet (AES-based) - Simulated",
+                "intel_note": "Simulated Threat Intelligence",
             },
         )
         print(f"[DETECTION] Threat detected (honeypot): log_id={log.id}")
