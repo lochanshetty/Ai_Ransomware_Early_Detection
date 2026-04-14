@@ -73,13 +73,14 @@ def run_demo():
     threats = _request_json("/detect/threats")
 
     log_count = len(logs.get("results", []))
-    threat_count = len(threats) if isinstance(threats, list) else 0
+    threat_rows = threats.get("results", []) if isinstance(threats, dict) else threats
+    threat_count = len(threat_rows) if isinstance(threat_rows, list) else 0
 
     print("[DEMO] Completed.")
     print(f"[DEMO] Latest logs captured: {log_count}")
     print(f"[DEMO] Threats detected: {threat_count}")
     if threat_count:
-        top = threats[0]
+        top = threat_rows[0]
         print(
             "[DEMO] Latest threat -> "
             f"level={top.get('threat_level')} "

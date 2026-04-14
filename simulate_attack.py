@@ -9,8 +9,8 @@ How to run:
 5) View threats: GET http://127.0.0.1:8000/detect/threats
 
 This script is safe:
-- It does NOT encrypt files.
-- It only renames files by appending ".locked".
+- It uses reversible Fernet-based encryption for demo files only.
+- It renames encrypted files by appending ".locked".
 """
 
 from pathlib import Path

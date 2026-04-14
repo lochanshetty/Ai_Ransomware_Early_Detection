@@ -3,9 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from cryptography.fernet import Fernet, InvalidToken
-from django.conf import settings
 
-DEMO_DIR = Path(settings.BASE_DIR) / "demo_files"
+BASE_DIR = Path(__file__).resolve().parents[1]
+DEMO_DIR = BASE_DIR / "demo_files"
 KEY_FILE = DEMO_DIR / ".demo_fernet.key"
 
 
