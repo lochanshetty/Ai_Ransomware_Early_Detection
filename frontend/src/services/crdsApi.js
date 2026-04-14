@@ -40,7 +40,11 @@ export async function getHealth() {
 
 export async function getThreats() {
   try {
-    return await getJson('/detect/threats')
+    const payload = await getJson('/detect/threats')
+    if (Array.isArray(payload)) {
+      return payload
+    }
+    return payload?.results || []
   } catch {
     return []
   }
@@ -86,4 +90,8 @@ export async function getHoneypotTriggered() {
   } catch {
     return []
   }
+}
+
+export async function generateHoneypots() {
+  return postJson('/honeypot/generate')
 }

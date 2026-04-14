@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Bug, Lock, MapPin, Signal } from 'lucide-react'
 import GlassCard from '../components/ui/GlassCard'
 import PageShell from '../components/layout/PageShell'
-import { getHoneypotStatus, getHoneypotTriggered } from '../services/crdsApi'
+import { generateHoneypots, getHoneypotStatus, getHoneypotTriggered } from '../services/crdsApi'
 
 function HoneypotPage() {
   const [status, setStatus] = useState(null)
@@ -35,6 +35,7 @@ function HoneypotPage() {
   }, [])
 
   const createHoneypots = async () => {
+    await generateHoneypots()
     await loadStatus()
   }
 
