@@ -17,12 +17,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path, re_path
 from django.views.generic import TemplateView
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # Route CRDS REST APIs through the dedicated API module.
     path('', include('apps.api.urls')),
-    # React SPA entry routes served by Django.
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('', TemplateView.as_view(template_name='index.html'), name='spa-root'),
     path('login', TemplateView.as_view(template_name='index.html'), name='spa-login'),
     path('signup', TemplateView.as_view(template_name='index.html'), name='spa-signup'),

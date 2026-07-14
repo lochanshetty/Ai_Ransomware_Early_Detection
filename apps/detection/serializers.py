@@ -19,16 +19,26 @@ class ThreatSerializer(serializers.ModelSerializer):
         return obj.security_log.metadata or {}
 
     def get_process_name(self, obj: Threat):
-        return self._payload(obj).get("process_name") or self._metadata(obj).get("process_name") or "demo_simulation"
+        return (
+            self._payload(obj).get("process_name")
+            or self._metadata(obj).get("process_name")
+            or "unknown"
+        )
 
     def get_source_ip(self, obj: Threat):
-        return self._payload(obj).get("source_ip") or "198.51.100.23"
+        return self._payload(obj).get("source_ip") or self._metadata(obj).get("source_ip") or ""
 
     def get_behavior_pattern(self, obj: Threat):
-        return self._payload(obj).get("behavior_pattern") or "Rapid file modifications and rename sequence"
+        matches = self._payload(obj).get("rule_matches") or []
+        if matches:
+            return "; ".join(matches)
+        return self._payload(obj).get("behavior_pattern") or obj.reason or ""
 
     def get_encryption_type(self, obj: Threat):
-        return self._payload(obj).get("encryption_type") or "Fernet (AES-based) - Simulated"
+        entropy = self._payload(obj).get("entropy") or self._metadata(obj).get("entropy")
+        if entropy and float(entropy) > 7.0:
+            return "High-entropy content (possible encryption)"
+        return self._payload(obj).get("encryption_type") or "Not determined"
 
     class Meta:
         model = Threat

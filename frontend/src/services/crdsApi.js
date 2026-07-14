@@ -1,25 +1,39 @@
+import { getAccessToken, refreshAccessToken } from './auth'
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
 
-async function getJson(path) {
-  const response = await fetch(`${API_BASE}${path}`)
+async function request(path, options = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
+  }
+  const token = getAccessToken()
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
+  let response = await fetch(`${API_BASE}${path}`, { ...options, headers })
+
+  if (response.status === 401 && token) {
+    const refreshed = await refreshAccessToken()
+    if (refreshed) {
+      headers.Authorization = `Bearer ${getAccessToken()}`
+      response = await fetch(`${API_BASE}${path}`, { ...options, headers })
+    }
+  }
+
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`)
   }
   return response.json()
 }
 
+async function getJson(path) {
+  return request(path)
+}
+
 async function postJson(path, body = {}) {
-  const response = await fetch(`${API_BASE}${path}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  })
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`)
-  }
-  return response.json()
+  return request(path, { method: 'POST', body: JSON.stringify(body) })
 }
 
 export async function getMonitorStatus() {
@@ -52,7 +66,8 @@ export async function getThreats() {
 
 export async function getAlerts() {
   try {
-    return await getJson('/alerts/')
+    const payload = await getJson('/alerts/')
+    return Array.isArray(payload) ? payload : payload?.results || []
   } catch {
     return []
   }
@@ -140,4 +155,25 @@ export async function generateHoneypots() {
 
 export async function refreshHoneypots() {
   return postJson('/honeypot/refresh')
+}
+
+export async function getModelInfo() {
+  try {
+    return await getJson('/api/model/info')
+  } catch {
+    return { loaded: false, model_info: {} }
+  }
+}
+
+export async function getDetectionExplain(threatId) {
+  return getJson(`/api/detect/explain/${threatId}`)
+}
+
+export async function getLiveEvents(limit = 50) {
+  try {
+    const payload = await getJson(`/api/events/live?limit=${limit}`)
+    return payload.events || []
+  } catch {
+    return []
+  }
 }

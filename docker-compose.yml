@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: crds
+      POSTGRES_USER: crds
+      POSTGRES_PASSWORD: crds
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  api:
+    build: .
+    command: >
+      sh -c "python manage.py migrate &&
+             python training/train.py --model random_forest &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120"
+    environment:
+      DATABASE_URL: postgres://crds:crds@db:5432/crds
+      REDIS_URL: redis://redis:6379/0
+      DJANGO_DEBUG: "false"
+      DJANGO_SECRET_KEY: change-me-in-production
+      CRDS_AUTO_START_MONITORING: "true"
+      CRDS_RESPONSE_DRY_RUN: "true"
+    volumes:
+      - ./demo_files:/app/demo_files
+      - ./saved_models:/app/saved_models
+      - ./logs:/app/logs
+      - ./quarantine:/app/quarantine
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm ci && npm run build"
+    volumes:
+      - ./frontend:/app
+    profiles:
+      - build
+
+volumes:
+  postgres_data:

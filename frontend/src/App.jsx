@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import ProtectedRoute from './components/auth/ProtectedRoute'
 import AppShell from './components/layout/AppShell'
 import StartupDiagnostics from './components/ui/StartupDiagnostics'
 import DashboardPage from './pages/DashboardPage'
@@ -17,7 +18,14 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-          <Route path="/app" element={<AppShell />}>
+          <Route
+            path="/app"
+            element={
+              <ProtectedRoute>
+                <AppShell />
+              </ProtectedRoute>
+            }
+          >
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="logs" element={<LogsPage />} />
             <Route path="threats" element={<ThreatsPage />} />

@@ -1,55 +1,42 @@
+"""
+Backward-compatible wrapper delegating to persisted model loader.
+"""
+
 from __future__ import annotations
 
 from typing import Iterable
 
-from sklearn.ensemble import IsolationForest
-
 from apps.detection.models import SecurityLog
+from apps.detection.services.model_loader import model_loader
+from feature_extraction.aggregator import FeatureAggregator
+
+_aggregator = FeatureAggregator()
 
 
 def _extract_feature_vector(log: SecurityLog) -> list[float]:
-    """Converts a SecurityLog record into numeric features for inference."""
-
     metadata = log.metadata or {}
-    file_mod_count = float(metadata.get("file_mod_count", 0))
-    files_accessed_count = float(metadata.get("files_accessed_count", 0))
-    process_unknown = 1.0 if metadata.get("process_known", True) is False else 0.0
-
-    return [
-        file_mod_count,
-        files_accessed_count,
-        process_unknown,
-        float(len(log.message or "")),
-    ]
+    features = _aggregator.build(
+        file_path=metadata.get("file_path") or log.file_path,
+        action=log.action or metadata.get("event_action", ""),
+        previous_path=metadata.get("previous_path", ""),
+        pid=metadata.get("pid"),
+        process_known=bool(metadata.get("process_known", True)),
+        yara_match=bool(metadata.get("yara_match")),
+        honeypot_hit=bool(metadata.get("honeypot_hit")),
+        blacklist_hit=bool(metadata.get("blacklist_hit")),
+    )
+    return features.as_array()
 
 
 def score_logs(logs: Iterable[SecurityLog]) -> dict[int, float]:
-    """
-    Scores security logs with Isolation Forest.
+    """Scores logs using the persisted ML model."""
 
-    Returns a map of log_id -> anomaly_score in [0, 1], where higher means
-    more anomalous/suspicious.
-    """
+    if not model_loader.is_ready:
+        model_loader.reload()
 
-    logs = list(logs)
-    if not logs:
-        return {}
-
-    features = [_extract_feature_vector(log) for log in logs]
-    contamination = min(0.4, max(0.05, 1 / max(len(features), 1)))
-    model = IsolationForest(
-        n_estimators=100,
-        contamination=contamination,
-        random_state=42,
-    )
-    model.fit(features)
-    raw_scores = model.decision_function(features)
-
-    # Convert to "higher is more anomalous" and normalize 0..1.
-    anomaly = [-score for score in raw_scores]
-    minimum = min(anomaly)
-    maximum = max(anomaly)
-    spread = (maximum - minimum) or 1.0
-
-    normalized = [(score - minimum) / spread for score in anomaly]
-    return {log.id: normalized[idx] for idx, log in enumerate(logs)}
+    results: dict[int, float] = {}
+    for log in logs:
+        vector = _extract_feature_vector(log)
+        probability, _meta = model_loader.predict_proba(vector)
+        results[log.id] = probability
+    return results

@@ -7,5 +7,18 @@ class DetectionConfig(AppConfig):
     name = 'apps.detection'
 
     def ready(self):
-        # Import signal handlers after app registry is loaded.
         from apps.detection import signals  # noqa: F401
+        from apps.detection.services.model_loader import model_loader
+
+        if not model_loader.is_ready:
+            loaded = model_loader.reload()
+            if not loaded:
+                try:
+                    from training.train import train_model
+                    train_model(model_type="random_forest", output_name="random_forest_v1")
+                    model_loader.reload("random_forest_v1")
+                except Exception:  # noqa: BLE001
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        "Could not auto-train model on startup; run: python training/train.py"
+                    )

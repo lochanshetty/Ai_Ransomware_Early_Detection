@@ -78,8 +78,9 @@ class HoneypotAccessReportAPIView(APIView):
             {
                 "security_log_id": log.id,
                 "message": "Access event recorded",
-                "honeypot_triggered": monitor_result["triggered"],
-                "threat_id": monitor_result["threat_id"],
+                "honeypot_triggered": monitor_result.get("triggered", False),
+                "threat_id": monitor_result.get("threat_id"),
+                "honeypot_path": monitor_result.get("honeypot_path"),
             },
             status=status.HTTP_201_CREATED,
         )

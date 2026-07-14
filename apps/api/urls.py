@@ -1,8 +1,12 @@
 from django.urls import path
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from apps.api.views import (
     AlertListCreateAPIView,
+    DetectionExplainAPIView,
     HealthCheckAPIView,
+    LiveEventsAPIView,
+    ModelInfoAPIView,
     SystemRunAttackAPIView,
     SystemStartMonitoringAPIView,
     SystemMetricsAPIView,
@@ -10,6 +14,7 @@ from apps.api.views import (
     SystemStopAttackAPIView,
     SystemStopMonitoringAPIView,
 )
+from apps.api.auth_views import LoginAPIView, MeAPIView, RegisterAPIView
 from apps.deception.views import (
     HoneypotAccessReportAPIView,
     HoneypotCreateAPIView,
@@ -30,6 +35,11 @@ from apps.monitoring.views import (
 )
 
 urlpatterns = [
+    # Authentication
+    path("api/auth/register/", RegisterAPIView.as_view(), name="auth-register"),
+    path("api/auth/login/", LoginAPIView.as_view(), name="auth-login"),
+    path("api/auth/login/refresh/", TokenRefreshView.as_view(), name="auth-refresh"),
+    path("api/auth/me/", MeAPIView.as_view(), name="auth-me"),
     # Monitoring control endpoints.
     path("monitor/start", MonitorStartAPIView.as_view(), name="monitor-start"),
     path("monitor/status", MonitorStatusAPIView.as_view(), name="monitor-status"),
@@ -59,4 +69,7 @@ urlpatterns = [
     # Alert management endpoint.
     path("alerts/", AlertListCreateAPIView.as_view(), name="alerts-list-create"),
     path("healthz", HealthCheckAPIView.as_view(), name="health-check"),
+    path("api/model/info", ModelInfoAPIView.as_view(), name="model-info"),
+    path("api/detect/explain/<int:threat_id>", DetectionExplainAPIView.as_view(), name="detect-explain"),
+    path("api/events/live", LiveEventsAPIView.as_view(), name="events-live"),
 ]

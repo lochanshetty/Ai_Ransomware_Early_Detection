@@ -7,6 +7,8 @@ import {
   getAlerts,
   getMonitorLogs,
   getMonitorStatus,
+  getHoneypotStatus,
+  getModelInfo,
   getSystemStatus,
   getThreats,
   systemRunAttack,
@@ -23,33 +25,40 @@ function DashboardPage() {
   const [alerts, setAlerts] = useState([])
   const [threats, setThreats] = useState([])
   const [logs, setLogs] = useState([])
-  const [message, setMessage] = useState('')
+  const [honeypots, setHoneypots] = useState({ total_files: 0, triggered_files: 0, safe_files: 0 })
+  const [modelInfo, setModelInfo] = useState(null)
 
   const refreshData = async () => {
-    const [statusData, systemData, alertsData, threatsData, logsData] = await Promise.all([
+    const [statusData, systemData, alertsData, threatsData, logsData, honeypotData, modelData] = await Promise.all([
       getMonitorStatus(),
       getSystemStatus(),
       getAlerts(),
       getThreats(),
       getMonitorLogs(),
+      getHoneypotStatus(),
+      getModelInfo(),
     ])
     setStatus(statusData)
     setSystemState(systemData)
     setAlerts(alertsData)
     setThreats(threatsData)
     setLogs(logsData)
+    setHoneypots(honeypotData)
+    setModelInfo(modelData)
     setLoading(false)
   }
 
   useEffect(() => {
     let mounted = true
     const loadOnMount = async () => {
-      const [statusData, systemData, alertsData, threatsData, logsData] = await Promise.all([
+      const [statusData, systemData, alertsData, threatsData, logsData, honeypotData, modelData] = await Promise.all([
         getMonitorStatus(),
         getSystemStatus(),
         getAlerts(),
         getThreats(),
         getMonitorLogs(),
+        getHoneypotStatus(),
+        getModelInfo(),
       ])
       if (!mounted) return
       setStatus(statusData)
@@ -57,6 +66,8 @@ function DashboardPage() {
       setAlerts(alertsData)
       setThreats(threatsData)
       setLogs(logsData)
+      setHoneypots(honeypotData)
+      setModelInfo(modelData)
       setLoading(false)
     }
     loadOnMount()
@@ -67,18 +78,22 @@ function DashboardPage() {
 
   useEffect(() => {
     const timer = setInterval(async () => {
-      const [statusData, systemData, alertsData, threatsData, logsData] = await Promise.all([
+      const [statusData, systemData, alertsData, threatsData, logsData, honeypotData, modelData] = await Promise.all([
         getMonitorStatus(),
         getSystemStatus(),
         getAlerts(),
         getThreats(),
         getMonitorLogs(),
+        getHoneypotStatus(),
+        getModelInfo(),
       ])
       setStatus(statusData)
       setSystemState(systemData)
       setAlerts(alertsData)
       setThreats(threatsData)
       setLogs(logsData)
+      setHoneypots(honeypotData)
+      setModelInfo(modelData)
     }, 2000)
     return () => clearInterval(timer)
   }, [])
@@ -145,8 +160,12 @@ function DashboardPage() {
           </GlassCard>
           <GlassCard className="min-h-[122px] xl-kpi-card">
             <p className="text-xs uppercase tracking-[0.22em] text-cyan-300/80">Active Honeypots</p>
-            <h2 className="mt-2 text-3xl font-semibold text-emerald-300">8</h2>
-            <p className="mt-2 text-xs text-slate-400">All operational</p>
+            <h2 className="mt-2 text-3xl font-semibold text-emerald-300">{honeypots.total_files}</h2>
+            <p className="mt-2 text-xs text-slate-400">
+              {honeypots.triggered_files > 0
+                ? `${honeypots.triggered_files} triggered`
+                : 'All operational'}
+            </p>
           </GlassCard>
           <GlassCard className="min-h-[122px] xl-kpi-card">
             <p className="text-xs uppercase tracking-[0.22em] text-cyan-300/80">System Controls</p>
