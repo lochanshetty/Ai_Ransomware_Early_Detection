@@ -10,10 +10,12 @@ import SignupPage from './pages/SignupPage'
 import SystemStatusPage from './pages/SystemStatusPage'
 import ThreatsPage from './pages/ThreatsPage'
 
+const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+
 function App() {
   return (
     <>
-      <BrowserRouter>
+      <BrowserRouter basename={routerBasename}>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
@@ -26,13 +28,15 @@ function App() {
               </ProtectedRoute>
             }
           >
+            <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="logs" element={<LogsPage />} />
             <Route path="threats" element={<ThreatsPage />} />
             <Route path="honeypots" element={<HoneypotPage />} />
             <Route path="status" element={<SystemStatusPage />} />
-            <Route path="*" element={<Navigate to="/app/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Route>
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
       <StartupDiagnostics />

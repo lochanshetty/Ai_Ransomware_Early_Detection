@@ -10,9 +10,9 @@ function StartupDiagnostics() {
     getHealth().then((payload) => setHealth(payload))
   }, [])
 
-  if (!visible || !health) return null
+  if (!visible) return null
 
-  const healthy = health.status === 'ok'
+  const healthy = health?.status === 'ok'
   return (
     <div className={`fixed bottom-4 right-4 z-[100] w-[320px] rounded-xl border p-3 shadow-xl backdrop-blur-xl ${
       healthy ? 'border-emerald-400/30 bg-emerald-500/10' : 'border-rose-400/30 bg-rose-500/10'
@@ -25,8 +25,8 @@ function StartupDiagnostics() {
         <button type="button" onClick={() => setVisible(false)} className="text-xs text-slate-400 hover:text-slate-200">Dismiss</button>
       </div>
       <div className="space-y-1 text-xs text-slate-200">
-        <p className="flex items-center gap-1"><Activity className="h-3.5 w-3.5" /> {health.service}</p>
-        <p>Logs: {health.counts?.logs ?? 0} | Threats: {health.counts?.threats ?? 0} | Alerts: {health.counts?.alerts ?? 0}</p>
+        <p className="flex items-center gap-1"><Activity className="h-3.5 w-3.5" /> {health?.service || 'CRDS backend'}</p>
+        <p>Logs: {health?.counts?.logs ?? 0} | Threats: {health?.counts?.threats ?? 0} | Alerts: {health?.counts?.alerts ?? 0}</p>
       </div>
     </div>
   )
