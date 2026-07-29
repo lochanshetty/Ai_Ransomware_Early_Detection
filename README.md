@@ -1,25 +1,25 @@
-# 🛡️ Cognitive Ransomware Defense System (CRDS)
+#  Cognitive Ransomware Defense System (CRDS)
 
 > AI-driven, behavior-based ransomware early detection system built using Django, designed to detect and prevent advanced threats like GenieLocker **before encryption occurs**.
 
 ---
 
-## 🚀 Overview
+##  Overview
 
 The **Cognitive Ransomware Defense System (CRDS)** is a next-generation cybersecurity platform that combines:
 
-* 🧠 Behavioral Analysis
-* 🔮 Predictive AI Models
-* 🎭 Deception-Based Defense (Honeypots)
-* ⚡ Real-Time Automated Response
+*  Behavioral Analysis
+*  Predictive AI Models
+*  Deception-Based Defense (Honeypots)
+*  Real-Time Automated Response
 
 Unlike traditional systems that rely on CPU usage or disk activity, CRDS focuses on **attack intent, behavioral sequences, and attack-chain analysis** to detect ransomware at its earliest stage.
 
 ---
 
-## 🎯 Key Features
+## Key Features
 
-### 🔍 Multi-Layer Detection System
+###  Multi-Layer Detection System
 
 * Signature-based detection (known ransomware)
 * AI-based anomaly detection (unknown threats)
@@ -27,7 +27,7 @@ Unlike traditional systems that rely on CPU usage or disk activity, CRDS focuses
 
 ---
 
-### 🔗 Attack Chain Detection
+###  Attack Chain Detection
 
 Detects ransomware at different stages:
 
@@ -35,11 +35,11 @@ Detects ransomware at different stages:
 Recon → Delivery → Execution → Encryption → Extortion
 ```
 
-👉 Enables **pre-encryption detection**
+ Enables **pre-encryption detection**
 
 ---
 
-### 🧠 Behavioral Intelligence Engine
+### Behavioral Intelligence Engine
 
 * Tracks process behavior sequences
 * Detects abnormal file access patterns
@@ -47,7 +47,7 @@ Recon → Delivery → Execution → Encryption → Extortion
 
 ---
 
-### 🎭 Deception-Based Defense
+###  Deception-Based Defense
 
 * Smart honeypot files (fake sensitive data)
 * Adaptive placement and naming
@@ -55,14 +55,14 @@ Recon → Delivery → Execution → Encryption → Extortion
 
 ---
 
-### 🔮 Predictive Detection
+###  Predictive Detection
 
 * Uses sequence learning (LSTM / AI models)
 * Predicts ransomware behavior before execution
 
 ---
 
-### ⚡ Automated Response System
+###  Automated Response System
 
 * Terminates malicious processes
 * Isolates affected system
@@ -71,7 +71,7 @@ Recon → Delivery → Execution → Encryption → Extortion
 
 ---
 
-### 📊 Real-Time Dashboard
+###  Real-Time Dashboard
 
 * Threat level visualization
 * Attack timeline
@@ -80,7 +80,7 @@ Recon → Delivery → Execution → Encryption → Extortion
 
 ---
 
-## 🏗️ System Architecture
+##  System Architecture
 
 ```text
 User & Server Systems
@@ -113,7 +113,7 @@ Dashboard & Alerts
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```text
 crds/
@@ -131,7 +131,7 @@ crds/
 
 ---
 
-## 🧪 Safe Simulation
+##  Safe Simulation
 
 This project includes a **safe ransomware simulation module**:
 
@@ -141,19 +141,19 @@ This project includes a **safe ransomware simulation module**:
 
 ---
 
-## 🔬 Innovation & Novelty
+##  Innovation & Novelty
 
-* ✅ Behavior-sequence-based detection
-* ✅ Attack-chain-aware security model
-* ✅ Predictive ransomware detection
-* ✅ Adaptive honeypot system
-* ✅ Intent-based analysis
+*  Behavior-sequence-based detection
+*  Attack-chain-aware security model
+*  Predictive ransomware detection
+*  Adaptive honeypot system
+*  Intent-based analysis
 
-👉 Goes beyond traditional CPU/disk-based detection systems.
+ Goes beyond traditional CPU/disk-based detection systems.
 
 ---
 
-## 📊 Evaluation Metrics
+##  Evaluation Metrics
 
 * Detection Accuracy
 * False Positive Rate
@@ -162,7 +162,7 @@ This project includes a **safe ransomware simulation module**:
 
 ---
 
-## 📌 Use Cases
+##  Use Cases
 
 * Enterprise cybersecurity systems
 * Cloud infrastructure protection
@@ -171,7 +171,7 @@ This project includes a **safe ransomware simulation module**:
 
 ---
 
-## 🚧 Future Scope
+##  Future Scope
 
 * Integration with SIEM tools
 * Federated learning
@@ -180,7 +180,7 @@ This project includes a **safe ransomware simulation module**:
 
 ---
 
-## ⚙️ Setup Instructions
+##  Setup Instructions
 
 ```bash
 # Clone repository
@@ -204,20 +204,20 @@ python manage.py runserver
 
 ---
 
-## 🧠 Author
+##  Author
 
 **[Your Name]**
 Cybersecurity Engineering Student
 
 ---
 
-## ⭐ Contribution
+##  Contribution
 
 Contributions are welcome. Feel free to fork and improve the system.
 
 ---
 
-## ⚠️ Disclaimer
+##  Disclaimer
 
 This project is strictly for **educational and research purposes only**.
 No real ransomware or harmful code is included.
