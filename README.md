@@ -206,7 +206,7 @@ python manage.py runserver
 
 ##  Author
 
-**[Your Name]**
+Lochan
 Cybersecurity Engineering Student
 
 ---
